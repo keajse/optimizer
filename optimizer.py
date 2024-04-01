@@ -3,6 +3,7 @@ from tkinter import filedialog
 #import pyexcel
 import pandas as pd
 import numpy as np
+import os
 
 
 def validar_numero(input):
@@ -90,63 +91,133 @@ ventana.mainloop()
 def optimizar():
     if ruta_archivo:
         # Leer los datos del archivo Excel seleccionado
-        df = pd.read_excel(ruta_archivo)
-        #df = pd.read_excel('optimizador.xlsx')
+        df_init = pd.read_excel(ruta_archivo)
+        
+        #Renombrar el nombre de las columnas para evitar errores en la ejecución del código, ya que es obligatorio los siguientes nombres.
+        df_init.rename(columns={df_init.columns[0]: 'Perfil'}, inplace=True )
+        df_init.rename(columns={df_init.columns[1]: 'Medida'}, inplace=True )
+        df_init.rename(columns={df_init.columns[2]: 'Cant.'}, inplace=True )
+
+        #Agregar columna que extraiga el primer caracter de la columna perfil, se tiene en cuenta que los perfiles tradicionales empiezan por una letra mientras que el europeo por número.
+        df_init['Empieza'] = df_init['Perfil'].apply(lambda x: x[0] if isinstance(x, str) and len(x)>0 else None)
+
+        #Organizar los valores primero por perfiles A - Z y después por medidas de Mayor a Menor
+        df = df_init.sort_values(by=['Perfil','Medida'], ascending=[True, False])
+
+        #Se imprime en consola la nueva dataFrame para verificar que se estén aplicando correctamente los criterios.
         #print(df)
 
+        #Obtener referencias únicas por perfil
         referencias_unicas = np.array(df['Perfil'].unique())
 
+        #Inicialización
         resultados = []
         sobrante= []
+        hojaCorte = []
+        
 
+        #Ciclo para recorrer cada una de las filas que componen el array de las referencias únicas
         for idx, val in np.ndenumerate(referencias_unicas):
             
             MedidaTotal = 0
             totalPerfiles = 0
-            sobr = 0            
-                
+            sobr = 0   
+            compr = 0        
+
+            #Ciclo para recorrer las filas de la DataFrame 
             for indice, fila in df.iterrows():     
         
 
                 # Verificamos la condición presente en la columna 'Condicion'
                 if fila['Perfil'] == val:
 
-                    if(fila['Empieza'] == '3'):
+                    if(fila['Empieza'] == None):
                         unidad = dato2
                     else:
                         unidad = dato1
 
-                    print(unidad)
-                    
-                    for i in range(fila['Cant.']):
-                        
-                        print(f'{i}, {fila['Cant.']} - {unidad} vs {fila['Medida']}')   
-                        
-                        if(MedidaTotal + fila['Medida'] <= unidad):
-                            # Si la condición se cumple, con relación al nombre del perfil
-                            MedidaTotal += fila['Medida']
-                        else:
-                            totalPerfiles += 1
-                            sobr = unidad - MedidaTotal
-                            print(f'{val} = {sobr}')
-                            MedidaTotal = fila['Medida']
+                    #print(unidad)                   
 
-                            if sobr > 0:
-                                sobrante.append({
+
+                    #Con este ciclo se busca tener en cuenta el número de cortes por medidas y perfil.
+                    for i in range(fila['Cant.']):
+
+                        sobrante = sorted(sobrante, key=lambda x: (str(x['Perfil']), x['Sobrante']))   
+                        #print(sobrante)
+                        element_remove = None
+
+                        for elem in sobrante:
+                            if elem['Perfil'] == val:
+                                if fila['Medida'] <= elem['Sobrante']:
+                                    element_remove = elem
+
+                                    compr = elem['Sobrante'] - fila['Medida']
+
+                                    if compr > 0:
+                                        sobrante.append({
+                                            'NumPerfil': elem['NumPerfil'],
+                                            'Perfil': val,
+                                            'Sobrante': compr
+                                        }
+                                        )
+                                    hojaCorte.append({
+                                        'NumPerfil': elem['NumPerfil'],
+                                        'Perfil': val,
+                                        'Medida': fila['Medida'],
+                                    }
+                                    )
+                                    break
+                                    
+                                    
+                        
+                        if element_remove:
+                            sobrante.remove(element_remove)
+
+                        else:                                
+                    
+                            #print(f'{i}, {fila['Cant.']} - {unidad} vs {fila['Medida']}')   
+                            
+                            if(MedidaTotal + fila['Medida'] <= unidad):
+                                # Si la condición se cumple, con relación al nombre del perfil
+                                MedidaTotal += fila['Medida']
+                                hojaCorte.append({
+                                    'NumPerfil': totalPerfiles + 1,
                                     'Perfil': val,
-                                    'Sobrante': sobr
+                                    'Medida': fila['Medida'],
                                 }
                                 )
 
-                    if MedidaTotal > 0:
-                        sobr = unidad - MedidaTotal
-                        if sobr > 0:
-                            sobrante.append({
-                                'Perfil': val,
-                                'Sobrante': sobr
-                            }
-                            )
-                        print(f'{val} = {sobr}')
+                            else:
+                                totalPerfiles += 1
+                                sobr = unidad - MedidaTotal
+                                #print(f'{val} = {sobr}')
+                                MedidaTotal = fila['Medida']
+
+                                if sobr > 0:
+                                    sobrante.append({
+                                        'NumPerfil': totalPerfiles,
+                                        'Perfil': val,
+                                        'Sobrante': sobr
+                                    }
+                                    )
+                                
+                                hojaCorte.append({
+                                    'NumPerfil': totalPerfiles + 1,
+                                    'Perfil': val,
+                                    'Medida': fila['Medida'],
+                                }
+                                )
+
+            if MedidaTotal > 0:
+                sobr = unidad - MedidaTotal
+                if sobr > 0:
+                    sobrante.append({
+                        'NumPerfil': totalPerfiles+1,
+                        'Perfil': val,
+                        'Sobrante': sobr
+                    }
+                    )
+                #print(f'{val} = {sobr}')
 
         
             totalPerfiles += 1     
@@ -162,10 +233,29 @@ def optimizar():
 
         nuevo_df = pd.DataFrame(resultados)
 
-        nuevo_df.to_excel('Perfiles_Aprox.xlsx', index=False)
-
         sobr_df = pd.DataFrame(sobrante)
-        sobr_df.to_excel('Medidas_Sobrantes.xlsx', index=False)
+        sobr_df = sobr_df.sort_values(by=['Perfil','NumPerfil'], ascending=[True, True])
+
+        hc_df = pd.DataFrame(hojaCorte)
+        hc_df = hc_df.sort_values(by=['Perfil','NumPerfil'], ascending=[True, True])
+      
+        #Nombre de las hojas del libro
+        sheet_names = ['Perfiles_Aprox', 'Medidas_Sobrantes', 'HojaCorte']
+
+        directorio = os.path.dirname(ruta_archivo)
+        nomArchivoDestino = 'Resumen_Optimizado.xlsx'
+
+        rutaDestino = os.path.join(directorio, nomArchivoDestino)
+
+        #Nombre del nuevo libro
+        excel_writer = pd.ExcelWriter(rutaDestino, engine='xlsxwriter')
+
+
+        nuevo_df.to_excel(excel_writer, sheet_name=sheet_names[0], index=False)
+        sobr_df.to_excel(excel_writer, sheet_name=sheet_names[1], index=False)
+        hc_df.to_excel(excel_writer, sheet_name=sheet_names[2], index=False)
+
+        excel_writer.close()
 
 
 
