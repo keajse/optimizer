@@ -1,9 +1,27 @@
 import tkinter as tk
 from tkinter import filedialog
+from tkinter import messagebox
 #import pyexcel
 import pandas as pd
 import numpy as np
 import os
+import datetime
+
+
+# Fecha de expiración del programa
+fecha_expiracion = datetime.date(2024, 6, 30)
+
+# Verificar la fecha de expiración
+fecha_actual = datetime.date.today()
+if fecha_actual > fecha_expiracion:
+    print("El programa ha expirado.")
+    messagebox.showinfo("Error", "El programa ha expirado")
+    # Aquí podrías mostrar un mensaje de error y salir del programa
+    exit()
+
+tiempo = (fecha_actual - fecha_expiracion).days
+messageFin = f'El programa expirará en {tiempo} días'
+messagebox.showinfo("Cuenta regresiva", messageFin)
 
 
 def validar_numero(input):
@@ -256,6 +274,9 @@ def optimizar():
         hc_df.to_excel(excel_writer, sheet_name=sheet_names[2], index=False)
 
         excel_writer.close()
+
+         # Mostrar un mensaje de confirmación
+        messagebox.showinfo("Proceso completado", "El proceso de exportación ha finalizado.")
 
 
 
