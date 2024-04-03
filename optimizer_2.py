@@ -14,14 +14,37 @@ fecha_expiracion = datetime.date(2024, 6, 30)
 # Verificar la fecha de expiración
 fecha_actual = datetime.date.today()
 if fecha_actual > fecha_expiracion:
-    print("El programa ha expirado.")
-    messagebox.showinfo("Error", "El programa ha expirado")
+    #print("Paz y bien. El programa ha expirado.")
+    messagebox.showinfo("Error", "Paz y bien. El programa ha expirado. Bendiciones")
     # Aquí podrías mostrar un mensaje de error y salir del programa
     exit()
 
 tiempo = (fecha_actual - fecha_expiracion).days
-messageFin = f'El programa expirará en {tiempo} días'
+messageFin = f'Paz y bien. El programa expirará en {tiempo} días. Bendiciones'
 messagebox.showinfo("Cuenta regresiva", messageFin)
+
+def mostrar_indicaciones():
+    indicaciones = """
+    Indicaciones para el desarrollo del programa:
+
+    1. Ingrese el valor para el "Perfil tradicional" y "Perfil Europeo" en los campos correspondientes. 
+        *Tener en cuenta si el campo se deja vacío por defecto se tomará 6000 para el perfil tradicional y 6500 para perfil europeo.
+        *En las referencias se tomarán como europeas aquellas que son de caracter numérico y tradicional las que son alfanuméricas o de tipo texto.
+
+    2. Ingrese el descuento por corte en milímetros en el campo correspondiente.
+
+    3. Seleccione un archivo haciendo clic en "Seleccionar Archivo".
+        Recuerda el archivo a cargar debe contar con las siguientes especificaciones:
+            *Archivo en Excel que contenga sólo una hoja.
+            *La hoja debe contener tres columnas sin formato en el siguiente orden perfil, medida y cantidad.
+
+    4. Una vez cargados los datos, haga clic en "Optimizar" para procesar y generar el archivo optimizado.
+
+    5. El archivo optimizado se guardará en el mismo directorio que el archivo seleccionado, con el nombre "Resumen_Optimizado.xlsx".
+
+    ¡Recuerda hacer de lo ordinario algo extraordinario!
+    """
+    messagebox.showinfo("Indicaciones", indicaciones)
 
 def validar_numero(input):
     if input.isdigit():
@@ -59,18 +82,18 @@ def seleccionar_archivo():
 # Crear la ventana
 ventana = tk.Tk()
 ventana.title("Optimizador de Aluminio")
-ventana.minsize(width=300, height=180)
-ventana.maxsize(width=350, height=200)
+ventana.minsize(width=300, height=220)
+ventana.maxsize(width=350, height=240)
 
 # Crear etiquetas y entradas para los datos
-etiqueta1 = tk.Label(ventana, text="Perfil tradicional:")
+etiqueta1 = tk.Label(ventana, text="Perfil tradicional (mm):")
 etiqueta1.grid(row=0, column=0, padx=5, pady=5)
 
 validacion_dato1 = ventana.register(validar_numero)
 entrada1 = tk.Entry(ventana, validate="key", validatecommand=(validacion_dato1, '%P'))
 entrada1.grid(row=0, column=1, padx=5, pady=5)
 
-etiqueta2 = tk.Label(ventana, text="Perfil Europeo:")
+etiqueta2 = tk.Label(ventana, text="Perfil Europeo (mm):")
 etiqueta2.grid(row=1, column=0, padx=5, pady=5)
 
 validacion_dato2 = ventana.register(validar_numero)
@@ -95,9 +118,13 @@ boton_archivo.grid(row=4, column=0, padx=5, pady=5, sticky="ew")  # Centrar y ex
 boton_archivo.config(width=20)  # Ajustar el ancho del botón
 
 # Botón para obtener los datos
-boton_obtener = tk.Button(ventana, text="Obtener Datos", command=obtener_datos)
+boton_obtener = tk.Button(ventana, text="Optimizar", command=obtener_datos)
 boton_obtener.grid(row=4, column=1, padx=5, pady=5, sticky="ew")  # Centrar y expandir horizontalmente
 boton_obtener.config(width=20)  # Ajustar el ancho del botón
+
+boton_indicaciones = tk.Button(ventana, text="Indicaciones", command=mostrar_indicaciones)
+boton_indicaciones.grid(row=5, columnspan=2, padx=5, pady=5, sticky="ew")
+boton_indicaciones.config(width=20)
 
 # Label como pie de página
 pie_de_pagina = tk.Label(ventana, text="""Realizado por Laura Juliana Serrano García - MaKeajse 2024.
@@ -181,12 +208,14 @@ def optimizar():
 
                                     if compr > 0:
                                         sobrante.append({
+                                            'Longitud de perfil': elem['Longitud de perfil'],
                                             'NumPerfil': elem['NumPerfil'],
                                             'Perfil': val,
                                             'Sobrante': compr
                                         }
                                         )
                                     hojaCorte.append({
+                                        'Longitud de perfil': unidad,
                                         'NumPerfil': elem['NumPerfil'],
                                         'Perfil': val,
                                         'Medida Corte': fila['Medida Corte'],
@@ -208,6 +237,7 @@ def optimizar():
                                 # Si la condición se cumple, con relación al nombre del perfil
                                 MedidaTotal += fila['MedidaAumentada']
                                 hojaCorte.append({
+                                    'Longitud de perfil': unidad,
                                     'NumPerfil': totalPerfiles + 1,
                                     'Perfil': val,
                                     'Medida Corte': fila['Medida Corte'],
@@ -223,6 +253,7 @@ def optimizar():
 
                                 if sobr > 0:
                                     sobrante.append({
+                                        'Longitud de perfil': unidad,
                                         'NumPerfil': totalPerfiles,
                                         'Perfil': val,
                                         'Sobrante': sobr
@@ -230,6 +261,7 @@ def optimizar():
                                     )
                                 
                                 hojaCorte.append({
+                                    'Longitud de perfil': unidad,
                                     'NumPerfil': totalPerfiles + 1,
                                     'Perfil': val,
                                     'Medida Corte': fila['Medida Corte'],
@@ -241,6 +273,7 @@ def optimizar():
                 sobr = unidad - MedidaTotal
                 if sobr > 0:
                     sobrante.append({
+                        'Longitud de perfil': unidad,
                         'NumPerfil': totalPerfiles+1,
                         'Perfil': val,
                         'Sobrante': sobr
@@ -287,9 +320,7 @@ def optimizar():
         excel_writer.close()
 
          # Mostrar un mensaje de confirmación
-        messagebox.showinfo("Proceso completado", "El proceso de exportación ha finalizado.")
-
-
+        messagebox.showinfo("Proceso completado", "El proceso de exportación ha finalizado. Bendiciones")
 
 
 # Llamar a la función para abrir el explorador de archivos
