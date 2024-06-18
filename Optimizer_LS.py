@@ -48,7 +48,7 @@ def mostrar_indicaciones():
     5. El archivo optimizado se guardará en el mismo directorio que el archivo seleccionado, con el nombre "Resumen_Optimizado.xlsx".
 
 
-    6. Los botones de color verde serán de apoyo mientras que los azules son de caracter obligatorio para la ejecución del programa.
+    6. Los botones de color azul serán de apoyo mientras que los verdes son de caracter obligatorio para la ejecución del programa.
 
 
     ¡Recuerda hacer de lo ordinario algo extraordinario!
